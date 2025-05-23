@@ -1,0 +1,20 @@
+[gd_scene load_steps=4 format=3 uid="uid://df7qwhlqokkrs"]
+
+[ext_resource type="Script" uid="uid://dq4yklh67hib4" path="res://scripts/apple.gd" id="1_7vr8k"]
+[ext_resource type="Texture2D" uid="uid://brobkmxstl8xf" path="res://assets/apples/RedApple.png" id="1_h071m"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_n78qv"]
+size = Vector2(9, 10.5)
+
+[node name="Apple" type="Area2D"]
+scale = Vector2(2, 2)
+script = ExtResource("1_7vr8k")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture_filter = 1
+texture = ExtResource("1_h071m")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -1.5)
+scale = Vector2(2, 2)
+shape = SubResource("RectangleShape2D_n78qv")
