@@ -1,7 +1,6 @@
 extends CanvasLayer
 
 signal menu_exit
-signal restart
 
 var food_status: bool = false
 var borderless: bool = false

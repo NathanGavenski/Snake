@@ -1,17 +1,17 @@
 [gd_scene load_steps=8 format=3 uid="uid://2i7svhfvkx0q"]
 
 [ext_resource type="Script" uid="uid://cr2xeqiyary4m" path="res://scripts/main.gd" id="1_0wfyh"]
-[ext_resource type="PackedScene" uid="uid://bnl24mkh7vic3" path="res://scenes/snake_segment.tscn" id="2_jyhfs"]
 [ext_resource type="Texture2D" uid="uid://cj0xvfngqduxs" path="res://assets/bg.png" id="2_sugp2"]
 [ext_resource type="PackedScene" uid="uid://df7qwhlqokkrs" path="res://scenes/apple.tscn" id="3_o6xl0"]
 [ext_resource type="PackedScene" uid="uid://ckl2tdj8mut0o" path="res://scenes/hud.tscn" id="3_sugp2"]
+[ext_resource type="PackedScene" uid="uid://bxpfc5kpv55xj" path="res://scenes/snake.tscn" id="4_o6xl0"]
 [ext_resource type="PackedScene" uid="uid://blx1ighgeifbe" path="res://scenes/menu_layer.tscn" id="6_o6xl0"]
 [ext_resource type="PackedScene" uid="uid://ygog6uf2qls2" path="res://scenes/game_over_menu.tscn" id="6_tefeu"]
 
 [node name="Main" type="Node"]
 script = ExtResource("1_0wfyh")
-snake_scene = ExtResource("2_jyhfs")
 apple_scene = ExtResource("3_o6xl0")
+snake_scene = ExtResource("4_o6xl0")
 
 [node name="MoveTimer" type="Timer" parent="."]
 wait_time = 0.1
