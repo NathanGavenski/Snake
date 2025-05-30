@@ -2,6 +2,7 @@ extends Node
 
 @export var apple_scene: PackedScene
 @export var snake_scene: PackedScene
+@export var portal_scene: PackedScene
 
 var score: int
 var game_started: bool = false
@@ -24,13 +25,19 @@ var food_time: int = 0
 var snake: Node2D
 var start_pos = Vector2(9, 9)
 
+var portals: Array = []
+
 func _ready() -> void:
 	self.new_game()
 
 func new_game() -> void:
 	if get_tree().paused:
 		get_tree().paused = false
+		
 		get_tree().call_group("snake", "queue_free")
+
+		self.portals.clear()
+		get_tree().call_group("portal", "queue_free")
 	$GameOverMenu.hide()
 	$MenuLayer.hide()
 
@@ -39,11 +46,22 @@ func new_game() -> void:
 	self.update_score(0)
 	self.spawn_snake()
 	self.spawn_food()
+	
+	if $MenuLayer.portal:
+		self.spawn_portal()
 
+# GAME CODE
 func update_score(new_score: int) -> void:
 	self.score = new_score
 	$Hud.get_node("ScoreLabel").text = "Score: " + str(new_score)
 
+func end_game() -> void:
+	$GameOverMenu.show()
+	$MoveTimer.stop()
+	self.game_started = false
+	get_tree().paused = true
+
+# SNAKE CODE
 func spawn_snake() -> void:
 	self.snake = self.snake_scene.instantiate()
 	self.snake.generate_snake(self.start_pos, self.cell_size, self.cells)
@@ -91,19 +109,76 @@ func check_out_of_bounds() -> bool:
 		return _down or _up or _left or _right
 	return false
 
-func end_game() -> void:
-	$GameOverMenu.show()
-	$MoveTimer.stop()
-	self.game_started = false
-	get_tree().paused = true
+# PORTAL CODE
+func spawn_portal() -> void:
+	if not self.portals:
+		var in_portal: Area2D = self.portal_scene.instantiate()
+		var out_portal: Area2D = self.portal_scene.instantiate()
+		self.portals.append_array([in_portal, out_portal])
+		
+		in_portal.set_in_portal()
+		out_portal.set_out_portal()
+		
+		var sprite: Sprite2D = in_portal.get_node("Sprite2D")
+		var true_size = sprite.texture.get_size() * sprite.scale
+		var center = true_size / 2
+		var offset = floor((Vector2(self.cell_size, self.cell_size) - true_size) / 2)
+		in_portal.offset = offset + center
+		out_portal.offset = offset + center
+		
+		in_portal.body_entered.connect(self.teleport_in)
+		out_portal.body_entered.connect(self.teleport_out)
+		add_child(in_portal)
+		add_child(out_portal)
+		self.move_portals()
 
+func teleport_in(body: Node2D) -> void:
+	if body.is_in_group("snake") and body.head:
+		self.teleport(body, self.portals[1])
+
+func teleport_out(body: Node2D) -> void:
+	if body.is_in_group("snake") and body.head:
+		self.teleport(body, self.portals[0])
+
+func teleport(body: Node2D, destination: Area2D) -> void:
+	print(body.grid_position)
+	print(destination.grid_position)
+	body.grid_position = destination.grid_position
+
+func move_portals() -> void:
+	for portal in self.portals:
+		var portal_set = false
+		while not portal_set:
+			portal.modulate.a = 0
+			var _pos = Vector2(randi_range(0, self.cells - 1), randi_range(0, self.cells - 1))
+			
+			for segments in self.snake.segments:
+				if _pos == segments.grid_position:
+					continue
+			
+			for _portal in self.portals:
+				if _pos == _portal.grid_position:
+					continue
+			
+			if self.food:
+				if _pos == self.food.grid_position:
+					continue
+			
+			portal.position = (_pos * self.cell_size) + Vector2(0, self.cell_size)
+			portal.position += portal.offset
+			portal.grid_position = _pos
+			portal_set = true
+			portal.time_alive = 0
+			portal.modulate.a = 1
+
+# FOOD CODE
 func spawn_food() -> void:
 	if not self.food:
 		# Create scene
 		self.food = self.apple_scene.instantiate()
 		
 		# Compute offset
-		var sprite = self.food.get_node("Sprite2D")
+		var sprite: Sprite2D = self.food.get_node("Sprite2D")
 		var true_size = sprite.texture.get_size() * sprite.scale
 		var center = true_size / 2
 		var offset = floor((Vector2(self.cell_size, self.cell_size) - true_size) / 2)
@@ -166,6 +241,7 @@ func tick_food() -> void:
 	self.food.modulate.a = alpha
 	self.food_time += 1
 
+# SIGNALS
 func _on_update_score(new_score: int) -> void:
 	self.update_score(new_score)
 	self.move_food()
@@ -193,11 +269,12 @@ func _on_hud_open_menu() -> void:
 func _on_menu_layer_menu_exit() -> void:
 	$MenuLayer.hide()
 	self.game_started = false
-	new_game()
+	self.new_game()
 
 func _process(_delta: float) -> void:
 	self.move_snake()
 
+# UTILS CODE
 func sigmoid(x: float, steepness: int = 10) -> float:
 	var x_norm = (x - 0) / (self.food_timeout - 0)
 	var sig = 1 / (1 + exp(-steepness * (x_norm - 0.5)))
