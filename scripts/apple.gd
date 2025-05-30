@@ -11,6 +11,9 @@ var grid_position: Vector2 = Vector2(0, 0)
 var current_apple: int
 var offset: Vector2 = Vector2(0, 0)
 
+var lifespan: int = 30
+var time_alive: int = 0
+
 func _ready() -> void:
 	$Sprite2D.texture = self.apple
 	self.current_apple = self.apple_type.APPLE

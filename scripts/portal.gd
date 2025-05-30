@@ -7,7 +7,7 @@ var grid_position: Vector2
 var offset: Vector2
 
 var in_portal: bool
-var portal_timer: int = 30
+var lifespan: int = 30
 var time_alive: int = 0
 
 func set_in_portal() -> void:

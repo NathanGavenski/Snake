@@ -17,14 +17,9 @@ var right = Vector2(1, 0)
 var reverse_direction = {self.up: self.down, self.down: self.up, self.left: self.right, self.right: self.left}
 var move_direction: Vector2 = Vector2(0, 0)
 
-var food: Node2D
-var food_vanish: bool = true
-var food_timeout: int = 40
-var food_time: int = 0
-
 var snake: Node2D
 var start_pos = Vector2(9, 9)
-
+var food: Node2D
 var portals: Array = []
 
 func _ready() -> void:
@@ -141,8 +136,6 @@ func teleport_out(body: Node2D) -> void:
 		self.teleport(body, self.portals[0])
 
 func teleport(body: Node2D, destination: Area2D) -> void:
-	print(body.grid_position)
-	print(destination.grid_position)
 	body.grid_position = destination.grid_position
 
 func move_portals() -> void:
@@ -170,6 +163,15 @@ func move_portals() -> void:
 			portal_set = true
 			portal.time_alive = 0
 			portal.modulate.a = 1
+
+func tick_portal() -> void:
+	for portal in self.portals:
+		if portal.lifespan == portal.time_alive:
+			return self.move_portals()
+	
+		var alpha = 1 - self.sigmoid(portal.time_alive, portal.lifespan)
+		portal.modulate.a = alpha
+		portal.time_alive += 1
 
 # FOOD CODE
 func spawn_food() -> void:
@@ -230,16 +232,16 @@ func move_food() -> void:
 	self.food.position += self.food.offset
 	self.food.grid_position = _food_pos
 
-	self.food_time = 0
+	self.food.time_alive = 0
 	self.food.modulate.a = 1
 
 func tick_food() -> void:
-	if self.food_time == self.food_timeout:
+	if self.food.time_alive == self.food.lifespan:
 		return self.move_food()
 
-	var alpha = 1 - self.sigmoid(self.food_time)
+	var alpha = 1 - self.sigmoid(self.food.time_alive, self.food.lifespan)
 	self.food.modulate.a = alpha
-	self.food_time += 1
+	self.food.time_alive += 1
 
 # SIGNALS
 func _on_update_score(new_score: int) -> void:
@@ -254,9 +256,12 @@ func _on_move_timer_timeout() -> void:
 
 	if $MenuLayer.food_status:
 		self.tick_food()
-	elif self.food_time > 0:
-		self.food_time = 0
+	elif self.food.time_alive > 0:
+		self.food.time_alive = 0
 		self.food.modulate.a = 1
+	
+	if $MenuLayer.portal:
+		self.tick_portal()
 
 func _on_game_over_menu_restart() -> void:
 	new_game()
@@ -275,7 +280,7 @@ func _process(_delta: float) -> void:
 	self.move_snake()
 
 # UTILS CODE
-func sigmoid(x: float, steepness: int = 10) -> float:
-	var x_norm = (x - 0) / (self.food_timeout - 0)
+func sigmoid(x: float, max: int, steepness: int = 10) -> float:
+	var x_norm = (x - 0) / (max - 0)
 	var sig = 1 / (1 + exp(-steepness * (x_norm - 0.5)))
-	return sig
+	return min(sig, 0.95)
